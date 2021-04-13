@@ -1,26 +1,19 @@
 const path = require('path');
+const EsmWebpackPlugin = require('@purtuga/esm-webpack-plugin');
 
 module.exports = {
   target: 'node',
   entry: {
-    app: [ './src/index.ts' ]
-  },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
-        exclude: /node_modules/,
-      }
-    ],
+    app: [ './src/index' ]
   },
   resolve: {
-    extensions: [ '.ts', '.js' ]
+    extensions: [ '.mjs' ]
   },
   output: {
     path: path.resolve(__dirname, './build'),
     filename: 'script.js',
-    libraryTarget: 'umd',
+    library:"pipcookScript",
+    libraryTarget:"var",
   },
-  mode: 'development'
+  mode: "development"
 };

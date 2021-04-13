@@ -1,30 +1,4 @@
-
-import { DataSourceEntry, ScriptContext } from '@pipcook/core';
-import type { Dataset as DatacookDataset } from '@pipcook/datacook';
-import type * as Datacook from '@pipcook/datacook';
-
-let dataCook: typeof Datacook;
-type Sample = DatacookDataset.Types.Sample<string, string>;
-type Dataset<T extends DatacookDataset.Types.Sample<any>, D extends DatacookDataset.Types.DatasetMeta> = DatacookDataset.Types.Dataset<T, D>;
-type DatasetMeta = DatacookDataset.Types.DatasetMeta;
-type DataAccessor<T> = DatacookDataset.Types.DataAccessor<T>;
-
-/**
- * The options for current script
- */
-interface ScriptOption {
-  // Maximum number of digits of each operand of the
-  digits?: number;
-  // Number of examples to generate.
-  numExamples?: number
-}
-/**
- * The options for current script
- */
-interface ScriptOption {
-  // All the option could be undefined if user not passed in, so we should define it to be optional.
-  url?: string;
-}
+let dataCook = null;
 
 /**
  * Generate examples.
@@ -35,9 +9,9 @@ interface ScriptOption {
  * @param digits Maximum number of digits of each operand of the
  * @param numExamples Number of examples to generate.
  * @param invert Whether to invert the strings in the question.
- * @returns The generated examples.
+ * @returns The generated examples and digit array.
  */
-function generateData(digits: number, numExamples: number, invert = false): string[][] {
+function generateData(digits, numExamples, invert = false) {
   const digitArray = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
   const arraySize = digitArray.length;
 
@@ -50,7 +24,7 @@ function generateData(digits: number, numExamples: number, invert = false): stri
       const index = Math.floor(Math.random() * arraySize);
       str += digitArray[index];
     }
-    return Number.parseInt(str);
+    return parseInt(str);
   };
 
   const seen = new Set();
@@ -82,28 +56,25 @@ function generateData(digits: number, numExamples: number, invert = false): stri
 /**
  * This is the entry of datasource script
  */
-export const datasource: DataSourceEntry<Sample, DatasetMeta> =
-async (option: ScriptOption, context: ScriptContext): Promise<Dataset<Sample, DatasetMeta>> => {
+module.exports = async (options, context) => {
   let {
     digits = '2',
     numExamples = '100'
-  } = option;
-  digits = Number.parseInt(digits as string);
-  numExamples = Number.parseInt(numExamples as string);
-  dataCook = context.Datacook;
+  } = options;
+  digits = parseInt(digits);
+  numExamples = parseInt(numExamples);
+  dataCook = context.dataCook;
 
   const data = generateData(digits, numExamples);
   const split = Math.floor(numExamples * 0.9);
   const trainData = data.slice(0, split).map(item => ({ label: item[1], data: item[0] }));
   const testData = data.slice(split).map(item => ({ label: item[1], data: item[0] }));
   const meta = {
-    // todo: custum type
     type: dataCook.Dataset.Types.DatasetType.General,
     size: {
       test: testData.length,
       train: trainData.length
-    },
-    labelMap: {}
+    }
   };
-  return dataCook.Dataset.makeDataset<Sample, DatasetMeta>({ trainData, testData }, meta);
+  return dataCook.Dataset.makeDataset({ trainData, testData }, meta);
 };

@@ -1,5 +1,4 @@
-# @imgcook/pipcook-datasource-template
-
+# Pipcook script for addition RNN
 ### Description
 
-This is template project for pipcook datasource script.
+This is a project for pipcook script.

@@ -12,7 +12,7 @@
         "<node_internals>/**"
       ],
       "program": "/Users/feiyu.zfy/work/pipcook/packages/cli/dist/bin/pipcook.js",
-      "args": [ "run", "${workspaceFolder}/debug/pipeline.json", "--output", "${workspaceFolder}/debug/workspace" ]
+      "args": [ "run", "${workspaceFolder}/debug/pipeline.json", "--output", "${workspaceFolder}/debug/workspace", "-d" ]
     }
   ]
 }

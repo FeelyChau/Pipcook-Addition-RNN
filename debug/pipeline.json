@@ -1,10 +1,10 @@
 {
   "specVersion": "2.0",
-  "dataSource": "file:///Users/feiyu.zfy/work/my-datasource/src/index.js?digits=2&numExamples=100",
+  "dataSource": "file:src/index.js?digits=2&numExamples=100",
   "dataflow": [
-    "file:///Users/feiyu.zfy/work/my-datasource/src/index.js?digits=2"
+    "file:src/index.js?digits=2"
   ],
-  "model": "file:///Users/feiyu.zfy/work/my-datasource/src/index.js",
+  "model": "file:src/index.js",
   "artifacts": [{
     "processor": "pipcook-artifact-zip@0.0.2",
     "target": "/tmp/mobilenet-model.zip"

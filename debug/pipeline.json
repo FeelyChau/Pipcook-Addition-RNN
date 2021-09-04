@@ -1,0 +1,20 @@
+{
+  "specVersion": "2.0",
+  "datasource": "file:///Users/feiyu.zfy/work/my-datasource/build/script.js?digits=2&numExamples=500",
+  "dataflow": [
+    "file:///Users/feiyu.zfy/work/my-datasource/build/script.js?digits=2"
+  ],
+  "model": "file:///Users/feiyu.zfy/work/my-datasource/build/script.js",
+  "artifact": [],
+  "options": {
+    "framework": "tfjs@3.8",
+    "train": {
+      "iterations": 10,
+      "validationRequired": true,
+      "rnnLayerSize": 128,
+      "digits": 2,
+      "vocabularySize": 12,
+      "batchSize": 32
+    }
+  }
+}

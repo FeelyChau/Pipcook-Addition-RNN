@@ -1,15 +1,11 @@
-import { ScriptContext, Runtime, ModelEntry } from '@pipcook/core';
-import type { Dataset as DatacookDataset } from '@pipcook/datacook';
-import type { Tensor2D, Tensor3D } from '@tensorflow/tfjs-node';
-import type * as tfjs from '@tensorflow/tfjs-node';
+import { DataCook, ScriptContext, Runtime, ModelEntry, DatasetPool } from '@pipcook/core';
+import { Tensor2D } from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs-node';
 
-let tf: typeof tfjs;
+type TensorSample = DataCook.Dataset.Types.Sample<Tensor2D>;
+type DatasetMeta = DatasetPool.Types.DatasetMeta;
 
-type TensorSample = DatacookDataset.Types.Sample<Tensor2D>;
-type Dataset<T extends DatacookDataset.Types.Sample<any>, D extends DatacookDataset.Types.DatasetMeta> = DatacookDataset.Types.Dataset<T, D>;
-type DataSourceMeta = DatacookDataset.Types.DatasetMeta;
-
-type RT = Runtime<TensorSample, DataSourceMeta>;
+type RT = Runtime<TensorSample, DatasetMeta>;
 
 function createAndCompileModel(
   hiddenSize: number, rnnType: string, digits: number, vocabularySize: number) {
@@ -77,11 +73,12 @@ function createAndCompileModel(
   return model;
 }
 
-async function train(runtime: RT, model: tfjs.Sequential, iterations: number, batchSize: number) {
+async function train(runtime: RT, model: tf.Sequential, iterations: number, batchSize: number) {
   for (let i = 0; i < iterations; ++i) {
-    runtime.dataSource.train.seek(0);
-    while(true) {
-      const samples = await runtime.dataSource.train.nextBatch(batchSize);
+    console.log('iterations', i);
+    runtime.dataset.train.seek(0);
+    while (true) {
+      const samples = await runtime.dataset.train.nextBatch(batchSize);
       if (!samples || samples.length === 0) {
         break;
       }
@@ -93,11 +90,11 @@ async function train(runtime: RT, model: tfjs.Sequential, iterations: number, ba
       });
       const xs3D = tf.stack(xs);
       const ys3D = tf.stack(ys);
-      runtime.dataSource.test.shuffle();
-      let testSamples = await runtime.dataSource.test.nextBatch(batchSize);
+      runtime.dataset.test.shuffle();
+      let testSamples = await runtime.dataset.test.nextBatch(batchSize);
       if (testSamples.length === 0) {
-        await runtime.dataSource.test.seek(0);
-        testSamples = await runtime.dataSource.test.nextBatch(batchSize);
+        await runtime.dataset.test.seek(0);
+        testSamples = await runtime.dataset.test.nextBatch(batchSize);
         if (testSamples.length === 0) {
           throw new TypeError('invalid test dataset');
         }
@@ -117,14 +114,14 @@ async function train(runtime: RT, model: tfjs.Sequential, iterations: number, ba
         validationData: [testXs3D, testYs3D],
         yieldEvery: 'epoch'
       });
-      console.log('history', history);
+      // console.log('history', history);
     }
   }
 }
 
-export async function model(
-  api: Runtime<TensorSample, DataSourceMeta>, options: Record<string, any>, context: ScriptContext
-): Promise<void> {
+export const model: ModelEntry<TensorSample, DatasetMeta> = async (
+  api: Runtime<TensorSample, DatasetMeta>, options: Record<string, any>, context: ScriptContext
+): Promise<void> => {
   let {
     rnnLayerSize,
     rnnType = 'SimpleRNN',
@@ -138,7 +135,6 @@ export async function model(
   vocabularySize = Number.parseInt(vocabularySize as string);
   iterations = Number.parseInt(iterations as string);
   batchSize = Number.parseInt(batchSize as string);
-  tf = await context.importJS('@tensorflow/tfjs-node');
   const model = createAndCompileModel(rnnLayerSize, rnnType, digits, vocabularySize);
   await train(api, model, iterations, batchSize);
   // const handler = tf.io.fileSystem(context.workspace.modelDir);

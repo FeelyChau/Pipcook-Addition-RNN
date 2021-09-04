@@ -1,13 +1,9 @@
 
-import { DataSourceEntry, ScriptContext } from '@pipcook/core';
-import type { Dataset as DatacookDataset } from '@pipcook/datacook';
+import { DatasetPool, DatasourceEntry, ScriptContext, DataCook } from '@pipcook/core';
 import type * as Datacook from '@pipcook/datacook';
 
-let dataCook: typeof Datacook;
-type Sample = DatacookDataset.Types.Sample<string, string>;
-type Dataset<T extends DatacookDataset.Types.Sample<any>, D extends DatacookDataset.Types.DatasetMeta> = DatacookDataset.Types.Dataset<T, D>;
-type DatasetMeta = DatacookDataset.Types.DatasetMeta;
-type DataAccessor<T> = DatacookDataset.Types.DataAccessor<T>;
+type Sample = DataCook.Dataset.Types.Sample<string, string>;
+type DatasetMeta = DatasetPool.Types.DatasetMeta;
 
 /**
  * The options for current script
@@ -82,15 +78,14 @@ function generateData(digits: number, numExamples: number, invert = false): stri
 /**
  * This is the entry of datasource script
  */
-export const datasource: DataSourceEntry<Sample, DatasetMeta> =
-async (option: ScriptOption, context: ScriptContext): Promise<Dataset<Sample, DatasetMeta>> => {
+export const datasource: DatasourceEntry<Sample, DatasetMeta> =
+async (option: ScriptOption, context: ScriptContext): Promise<DatasetPool.Types.DatasetPool<Sample, DatasetMeta>> => {
   let {
     digits = '2',
     numExamples = '100'
   } = option;
   digits = Number.parseInt(digits as string);
   numExamples = Number.parseInt(numExamples as string);
-  dataCook = context.Datacook;
 
   const data = generateData(digits, numExamples);
   const split = Math.floor(numExamples * 0.9);
@@ -98,12 +93,15 @@ async (option: ScriptOption, context: ScriptContext): Promise<Dataset<Sample, Da
   const testData = data.slice(split).map(item => ({ label: item[1], data: item[0] }));
   const meta = {
     // todo: custum type
-    type: dataCook.Dataset.Types.DatasetType.General,
+    type: DataCook.Dataset.Types.DatasetType.General,
     size: {
       test: testData.length,
       train: trainData.length
-    },
-    labelMap: {}
+    }
   };
-  return dataCook.Dataset.makeDataset<Sample, DatasetMeta>({ trainData, testData }, meta);
+  
+  return DatasetPool.ArrayDatasetPoolImpl.from({
+    trainData,
+    testData
+  });
 };

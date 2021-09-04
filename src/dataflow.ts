@@ -1,16 +1,11 @@
 
-import { ScriptContext, DataFlowEntry } from '@pipcook/core';
-import type { Dataset as DatacookDataset } from '@pipcook/datacook';
-import type * as Datacook from '@pipcook/datacook';
-import type { Tensor2D, Tensor3D } from '@tensorflow/tfjs-node';
-import type * as tfjs from '@tensorflow/tfjs-node';
+import { DataCook, ScriptContext, DataflowEntry, DatasetPool } from '@pipcook/core';
+import { Tensor2D, Tensor3D } from '@tensorflow/tfjs-node';
+import * as tf from '@tensorflow/tfjs-node';
 
-let tf: typeof tfjs;
-let datacook: typeof Datacook;
-type Sample = DatacookDataset.Types.Sample<string>;
-type TensorSample = DatacookDataset.Types.Sample<Tensor2D>;
-type Dataset<T extends DatacookDataset.Types.Sample<any>, D extends DatacookDataset.Types.DatasetMeta> = DatacookDataset.Types.Dataset<T, D>;
-type DataSourceMeta = DatacookDataset.Types.DatasetMeta;
+type Sample = DataCook.Dataset.Types.Sample<string>;
+type TensorSample = DataCook.Dataset.Types.Sample<Tensor2D>;
+type DataSourceMeta = DatasetPool.Types.DatasetMeta;
 
 class CharacterTable {
   charIndices: Record<string, any>;
@@ -76,18 +71,17 @@ class CharacterTable {
   }
 }
 
-export const dataflow: DataFlowEntry<Sample, DataSourceMeta, TensorSample> =
-async (dataset: Dataset<Sample, DataSourceMeta>, options: Record<string, any>, context: ScriptContext)
-  : Promise<Dataset<TensorSample, DataSourceMeta>> => {
+export const dataflow: DataflowEntry<Sample, DataSourceMeta, TensorSample> =
+async (dataset: DatasetPool.Types.DatasetPool<Sample, DataSourceMeta>, options: Record<string, any>, context: ScriptContext)
+  : Promise<DatasetPool.Types.DatasetPool<TensorSample, DataSourceMeta>> => {
   let { digits } = options;
-  datacook = context.Datacook;
   digits = Number.parseInt(digits as string);
   
   const characterTable = new CharacterTable('0123456789+ ');
-  return datacook.Dataset.transformSampleInDataset<DataSourceMeta, Sample, TensorSample>(async (sample: Sample): Promise<TensorSample> => {
+  return dataset.transform(async (sample: Sample): Promise<TensorSample> => {
     return {
       label: characterTable.encode(sample.label, digits + 1),
       data: characterTable.encode(sample.data, digits + 1 + digits)
     };
-  }, dataset);
+  });
 };
